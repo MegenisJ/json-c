@@ -1,0 +1,11 @@
+{
+    "test":"value",
+    "arraytest":["Value1","Value2"],
+    "falsetest1": false,
+    "falsetest2": FALSE,
+    "truetest1": TRUE,
+    "truetest2": TRUE,
+    "nulltest": null,
+    "numbertest": 123,
+    "numbertest2" 123.432
+}

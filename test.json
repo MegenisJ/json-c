@@ -7,5 +7,9 @@
     "truetest2": TRUE,
     "nulltest": null,
     "numbertest": 123,
-    "numbertest2" 123.432
+    "numbertest2": 123.432
+    "object1": {
+        "something": 123,
+        "hello": "test"
+    }
 }

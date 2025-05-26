@@ -6,7 +6,6 @@
 #include <ctype.h>
 #include "../useful-c/dynamic_array.h"
 
-
 #define FOREACH_TOKENNAME(TOKEN) \
    TOKEN( TOKEN_OPEN_OBJECT)\
    TOKEN( TOKEN_CLOSE_OBJECT)\
@@ -41,6 +40,27 @@ typedef struct {
     size_t capacity;
 } tokens;
 
+enum ValueType{
+   VALUETYPE_OBJECT,
+   VALUETYPE_STRING,
+   VALUETYPE_NUMBER,
+   VALUETYPE_ARRAY,
+   VALUETYPE_NULL,
+   VALUETYPE_BOOL
+};
+
+typedef struct {
+    char* key;
+    enum ValueType type;
+    void* value;
+} JSON_VALUE;
+
+typedef struct {
+    JSON_VALUE *items;
+    size_t count;
+    size_t capacity;
+} JSON_VALUES;
+
 char* t_print(token t){
     if(t.name == TOKEN_STRING){
         return t.value;
@@ -52,28 +72,30 @@ char* t_print(token t){
 }
 
 //gets position of final char in next token. Returns -1 if does not exit. Returns len if no tokens found.
-int getNextToken(char *json,int len, token* next){
+int get_next_token(char *json,int len, token* next){
     //printf("%s\n",json); //for debugging 
     for(int i=0;i<=len-1;i++){
-        switch(json[i]){
-            //TODO: Check for string
+        switch (json[i]) {
             case ' ' : 
             case '\n': 
                 continue;        
             case '"': {
-                if(i+1 == len){break;}
+
+                if (i+1 == len) 
+                    break;
+
                 const char* result = strchr(json+i+1, '"');
-                if(result != NULL){ 
+                if (result != NULL) { 
                     int pos = result - json ;
                     next ->name = TOKEN_STRING;
                     int len = pos-i-1;
                     char *temp = malloc(len + 1);
                     strncpy(temp, json+i+1,len);
                     temp[len] = '\0';
-                    //printf("String token value: [%s] \n",temp);
                     next -> value = temp; 
                     return pos;
                 }
+
                 printf("Invalid JSON, string contains no closing brace");
             }
             case '{':
@@ -94,45 +116,45 @@ int getNextToken(char *json,int len, token* next){
             case ':':
                 next->name = TOKEN_ASSIGNMENT;
                 return i;
-            //TODO: Check for number 
             case 'N':
-                if(strncmp(json + i + 1 , "ULL",3) == 0 ){
+                if (strncmp(json + i + 1 , "ULL",3) == 0 ) {
                     next->name=TOKEN_FALSE;
                     return i+3;
                 }
                 break;
             case 'n':
-                if(strncmp(json + i + 1 , "ull",3) == 0 ){
+                if (strncmp(json + i + 1 , "ull",3) == 0 ) {
                     next->name=TOKEN_FALSE;
                     return i+3;
                 }
                 break;
             case 'F':
-                if(strncmp(json + i + 1 , "ALSE", 4) == 0 ){
+                if (strncmp(json + i + 1 , "ALSE", 4) == 0 ) {
                     next->name=TOKEN_FALSE;
                     return i+4;
                 }
                 break;
             case 'f':
-                if(strncmp(json + i + 1, "alse", 4) == 0){
+                if (strncmp(json + i + 1, "alse", 4) == 0) {
                     next->name=TOKEN_FALSE;
                     return i+4;
                 }
                 break;
             case 't':
-                if(strncmp(json + i + 1, "rue",3) == 0){
+                if (strncmp(json + i + 1, "rue",3) == 0) {
                     next->name=TOKEN_FALSE;
                     return i+3;
                 }
                 break;
             case 'T':
-                if(strncmp(json + i + 1, "RUE",3) == 0){
+                if (strncmp(json + i + 1, "RUE",3) == 0) {
                     next->name=TOKEN_FALSE;
                     return i+3;
                 }
                 break;
 
         }
+
         if(isdigit(json[i])){
             next->name=TOKEN_NUMBER;
             
@@ -161,13 +183,13 @@ int getNextToken(char *json,int len, token* next){
     return 999;
 }
 
-int getTokens(char *json, int len, tokens *tokens){
+int get_tokens(char *json, int len, tokens *tokens){
     token next;
     next.name = TOKEN_NULL;
     int nextpos; 
     int size = len;
     //TODO :: Refactor to allow for position in starting string to be returned
-    while((nextpos = getNextToken(json,  size, &next)) >= 0 && nextpos != 999){
+    while((nextpos = get_next_token(json,  size, &next)) >= 0 && nextpos != 999){
         da_append((*tokens) ,next); 
         json = json + nextpos+1; 
         size = size - nextpos - 1;
@@ -182,6 +204,20 @@ int getTokens(char *json, int len, tokens *tokens){
     //TODO :: Handle negative return values properly to indicate in the console the location of the error.
 }
 
+//Check for correct order of tokens 
+//PARSE INTO A TREE AS JSON IS NOT ORDER SPECIFIC 
+//Returns negative values for errors 
+int parse_tokens(tokens *tokens, JSON_VALUES *values){
+    return -1;
+    //Implement a tree data structure
+    //Parse json tokens into the tree (recursively?) 
+    //Other than around the entire object every value must contain a key
+    //
+    //
+    //Object = ARRAY of JSON_VALUE
+    //ARRAY = 
+}
+
 int main(int argc, char * argv[]){
     FILE *fp = fopen(argv[1], "r");    
     assert(fp != NULL);
@@ -190,7 +226,7 @@ int main(int argc, char * argv[]){
     int ERROR_CODE;
 
     while (fgets(line, sizeof(line), fp)) { 
-        if((ERROR_CODE = getTokens(line, strlen(line), &tokens)) < 0){
+        if((ERROR_CODE = get_tokens(line, strlen(line), &tokens)) < 0){
             printf("Failure to read json\n");
             return ERROR_CODE; 
         };
@@ -201,6 +237,18 @@ int main(int argc, char * argv[]){
         printf("%s", TOKENNAME_STRING [tokens.items[x].name]);
         printf(" : %s\n",t_print(tokens.items[x]));
     } 
+
+    JSON_VALUE init;
+    init.key = "batman";
+    init.type = VALUETYPE_OBJECT;
+
+    JSON_VALUES values = {0};
+    da_append(values,init);
+
+    if((ERROR_CODE = parse_tokens(&tokens, &values)) < 0){
+            printf("Failure to read json\n");
+            return ERROR_CODE; 
+    }
 
     free(tokens.items);
     return 0;

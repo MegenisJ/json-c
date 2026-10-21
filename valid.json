@@ -1,0 +1,25 @@
+{
+    "test":"value",
+    "arraytest":["Value1","Value2"],
+    "arraytest2":["Value1","Value2"],
+    "falsetest1": false,
+    "falsetest2": false,
+    "truetest2": true,
+    "nulltest": null,
+    "numbertest": 123,
+    "numbertest2": 123.432,
+    "object1": {
+        "something": 123,
+        "hello": "test"
+    },
+    "objectarray" : [
+        "o1" : {
+            "testy": true,
+            "testy2": 123
+        },
+        "o2" : {
+            "testy": true,
+            "testy2": 123
+        }
+    ]
+}

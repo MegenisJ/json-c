@@ -1,6 +1,7 @@
 {
     "test":"value",
     "arraytest":["Value1","Value2"],
+    "arraytestinvalidtypes":["Value1",2,false],
     "falsetest1": false,
     "falsetest2": FALSE,
     "truetest1": TRUE,
@@ -12,4 +13,14 @@
         "something": 123,
         "hello": "test"
     }
+    "objectarray" : [
+        "o1" : {
+            "testy": true,
+            "testy2": 123
+        },
+        "o2" : {
+            "testy": true,
+            "testy2": 123
+        }
+    ]
 }

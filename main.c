@@ -68,6 +68,14 @@ char* t_print(token t){
     if(t.name == TOKEN_NUMBER){
         return t.value;
     }
+    if(t.name == TOKEN_FALSE)
+    {
+        return "0";
+    }
+    if(t.name == TOKEN_TRUE)
+    {
+        return "1";
+    }
     return "";
 }
 
@@ -204,12 +212,106 @@ int get_tokens(char *json, int len, tokens *tokens){
     //TODO :: Handle negative return values properly to indicate in the console the location of the error.
 }
 
+
+
 int parse_object (int startingpos, tokens *tokens, JSON_VALUES *values){
     //CHECKING THROUGH UNTIL WE GET TOKEN_END_OBJECT?  
     //can this be recursive
+    //Create a list of property names, need to check they are unique 
+    JSON_VALUES items = {0};
+    JSON_VALUE json_object;
+    json_object.key = "batman"; //TODO:: Add names
+    json_object.type = VALUETYPE_OBJECT;
+    json_object.value = &items;
+    //Create a list of property name + type + value
+
+    //start prev with delim / start array
+    JSON_VALUE nextItem;
+    enum tokenName prev = TOKEN_OPEN_OBJECT;
+    for(int x = startingpos + 1; x<=tokens->count; ++x){
+        token next = tokens -> items[x];
+        printf("type:%s value: %s \n", TOKENNAME_STRING[next.name], t_print(next));
+        if(next.name == TOKEN_CLOSE_OBJECT)
+        {
+            da_append((*values) , (JSON_VALUE)json_object);
+            printf("Object items: ");
+            for(int i = 0; i < items.count; ++i){
+                printf("%s", items.items[i].value);
+            }
+            printf("\n");
+            return 1;
+        }
+        if(next.name == TOKEN_OPEN_ARRAY)
+        {
+            x = parse_array
+        }
+        switch(prev)
+        {
+            case TOKEN_OPEN_OBJECT:
+            case TOKEN_DELIMETER:
+                if(next.name == TOKEN_STRING)
+                {
+                    nextItem.key = next.value;
+                    prev = next.name;
+                    continue;
+                } 
+                break;
+            case TOKEN_STRING:
+                switch (next.name) 
+                {
+                    //TODO:: Check if this can cause a bug, might work for valid json
+                    case TOKEN_ASSIGNMENT:     
+                    case TOKEN_DELIMETER:
+                        prev = next.name;
+                        continue;
+                    default:
+                        printf("Invalid token after string\n");
+                        return -1;
+                }
+                break;
+            case TOKEN_ASSIGNMENT:
+                printf("prev = assignment\n");
+                switch (next.name)
+                {
+                    case TOKEN_STRING:
+                        nextItem.type = VALUETYPE_STRING;
+                        nextItem.value = next.value;
+                        prev = next.name;
+                        break;
+                    case TOKEN_TRUE:
+                    case TOKEN_FALSE:
+                        nextItem.type = VALUETYPE_BOOL;
+                        nextItem.value = next.value;
+                        prev = next.name;
+                        break;
+                    case TOKEN_NUMBER:
+                        nextItem.type = VALUETYPE_NUMBER;
+                        nextItem.value = next.value;
+                        prev = next.name;
+                        break;
+                    case TOKEN_NULL:
+                        nextItem.type = VALUETYPE_NULL;
+                        nextItem.value = next.value;
+                        prev = next.name;
+                        break;
+                    default:
+                        printf("An error occurred parsing. Unexpected %s\n", TOKENNAME_STRING[next.name]);
+                        return -1;
+                }
+                da_append(items, nextItem);
+                continue;
+                break;
+            default:
+                //TODO:some error?
+                break;
+
+
+        }
+        //pattern should be key -> assigment -> value -> delimiter
+        
+    }
     return 0;
 }
-
 
 typedef struct 
 {
@@ -225,7 +327,7 @@ typedef struct {
 int parse_array (int startingpos, tokens *tokens, JSON_VALUES *values){
     //Checking through until we get an TOKEN_END_ARRAY
     enum tokenName type = tokens -> items[startingpos + 1].name; //I guess we should verify the valid types for an array
-    printf("Parsing array of type %s", TOKENNAME_STRING[type]);
+    printf("Parsing array of type %s \n", TOKENNAME_STRING[type]);
     ArrayItems items = {0};// TODO: I dont know if I need to malloc / free
     JSON_VALUE array;
     array.key = "batman"; //TODO:: Add names
@@ -262,7 +364,7 @@ int parse_array (int startingpos, tokens *tokens, JSON_VALUES *values){
 
         ArrayItem item = {next.value};
         da_append(items,item);
-
+        return x;
     }
     return 0;
 }
@@ -281,7 +383,7 @@ int parse_tokens(tokens *tokens, JSON_VALUES *values){
             parse_object(x,tokens, values);
         }
         if(tokens -> items[x].name == TOKEN_OPEN_ARRAY){
-            parse_array(x,tokens, values);
+            x = parse_array(x,tokens, values);
         }
     } 
     return 0;
@@ -296,7 +398,11 @@ int parse_tokens(tokens *tokens, JSON_VALUES *values){
 
 int main(int argc, char * argv[]){
     FILE *fp = fopen(argv[1], "r");    
-    assert(fp != NULL);
+    if(fp == NULL)
+    {
+        printf("Invalid filename entered\n");
+        return 0;
+    }
     char line[256]; 
     tokens tokens = {0};
     int ERROR_CODE;
